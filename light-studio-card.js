@@ -270,7 +270,8 @@ ha-card { padding: 22px; border-radius: 34px; border: 1px solid var(--lsc-edge);
 .round { border-color: var(--lsc-edge); }
 .top { grid-template-columns: minmax(170px, 210px) 1fr; align-items: center; gap: 22px; }
 .dial { width: 100%; max-width: 230px; margin: 0 auto; }
-.dial[data-slider] .track { pointer-events: stroke; touch-action: none; cursor: pointer; }
+.dial[data-slider] { touch-action: none; }   /* on the whole dial: the panel's browser ignores it on the SVG track alone */
+.dial[data-slider] .track { pointer-events: stroke; cursor: pointer; }
 .dial svg { display: block; width: 100%; height: auto; overflow: visible; }
 .dial svg * { pointer-events: none; }
 .dial .hub { pointer-events: auto; fill: #fff; cursor: pointer; filter: drop-shadow(0 4px 10px rgba(0,0,0,.35)); }
