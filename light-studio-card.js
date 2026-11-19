@@ -256,6 +256,8 @@ ha-card { padding: 12px; border-radius: 26px; }
 .grid { grid-template-columns: repeat(2, 1fr); }
 .sl { height: 42px; margin-bottom: 8px; }
 .thumb { height: 32px; }
+.compact .presets { gap: 4px; overflow: hidden; }
+.compact .preset { flex: 1 1 auto; min-width: 0; padding: 8px 5px; font-size: 12px; text-align: center; }
 `;
 
 // The dial variant: the same layout pieces, restyled as a frosted glass card.
@@ -289,8 +291,8 @@ ha-card { padding: 22px; border-radius: 34px; border: 1px solid var(--lsc-edge);
 .row .v b { font-size: 20px; font-weight: 700; }
 .sl { height: 50px; }
 .thumb { width: 18px; height: 40px; border-radius: 9px; }
-.rec { position: absolute; top: -9px; width: 24px; height: 24px; border-radius: 50%; transform: translateX(-50%); display: grid; place-items: center;
-  background: #1b1c20; color: #f0b35e; box-shadow: 0 0 0 2px rgba(255,255,255,.85); --mdc-icon-size: 16px; z-index: 1; }
+.rec { position: absolute; top: 50%; width: 28px; height: 28px; transform: translate(-50%, -50%); display: grid; place-items: center;
+  color: rgba(0,0,0,.45); --mdc-icon-size: 16px; }   /* a tick in the same ink as the dots, under the thumb */
 ha-card.t-midnight { --lsc-card: #14161a; --lsc-edge: rgba(255,255,255,.09); --lsc-shadow: none; --lsc-well: rgba(255,255,255,.05); }
 ha-card.t-paper { --lsc-card: linear-gradient(165deg, #fbfaf7, #ebe8e1); --lsc-edge: rgba(0,0,0,.12); --lsc-shadow: 0 6px 20px rgba(0,0,0,.12);
   --lsc-text: #1d1e22; --lsc-dim: rgba(29,30,34,.6); --lsc-panel: rgba(0,0,0,.05); --lsc-well: rgba(0,0,0,.06); --lsc-chip: rgba(0,0,0,.06);
@@ -470,12 +472,12 @@ class LightStudioCard extends HTMLElement {
     if (tab === "cct") {
       const stops = [0, .25, .5, .75, 1].map((f) => `rgb(${kelvinRgb(c.kmin + f * (c.kmax - c.kmin))})`).join(",");
       const kf = (k) => (k - c.kmin) / (c.kmax - c.kmin);
-      const ticks = ANCHORS.filter(([k]) => k > c.kmin + 150 && k < c.kmax - 150).map(([k]) => `<i class="tick" style="left:${this._pos(kf(k))}"></i>`).join("");
-      // The dial card marks the warmth recommended for this time of day; tapping the marker sets it.
       const rec = dial && recommendedK(new Date().getHours(), c);
+      const ticks = ANCHORS.filter(([k]) => k > c.kmin + 150 && k < c.kmax - 150 && k !== rec).map(([k]) => `<i class="tick" style="left:${this._pos(kf(k))}"></i>`).join("");
+      // The dial card marks the warmth recommended for this time of day; tapping the marker sets it.
       const mark = rec ? `<button class="rec" data-act="recommend" data-k="${rec}" title="Recommended now: ${kelvinName(rec)} · ${rec} K" aria-label="Recommended now: ${kelvinName(rec)}, ${rec} K" style="left:${this._pos(kf(rec))}"><ha-icon icon="mdi:white-balance-sunny"></ha-icon></button>` : "";
       body = `<div class="sl" data-slider="kelvin" ${sliderAttrs("Warmth", v.kelvin, c.kmin, c.kmax, v.kelvin + " K")} style="background:linear-gradient(90deg,${stops})">
-        ${ticks}<div class="thumb" style="left:${this._pos(kf(v.kelvin))}"></div>${mark}</div>`;
+        ${ticks}${mark}<div class="thumb" style="left:${this._pos(kf(v.kelvin))}"></div></div>`;
     } else if (tab === "hsi") {
       const sw = SWATCHES.map(([n, h]) => {
         const sel = on && colorMode && Math.min(Math.abs(v.hue - h), 360 - Math.abs(v.hue - h)) <= 4 && v.sat > 80;
