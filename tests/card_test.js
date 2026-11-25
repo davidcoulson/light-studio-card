@@ -117,6 +117,11 @@ check(dc.constructor.css.includes(".dial"), "dial card gets its own CSS");
 dc._click({ composedPath: () => [{ dataset: { act: "recommend", k: "3500" } }] });
 check(dcalls[0][1].color_temp_kelvin === 3500 && dcalls[0][1].entity_id === "light.lamp", "recommendation sets the warmth");
 check(one.html().includes("OUTPUT") && !one.html().includes("Recommended"), "studio card unchanged");
+check(!h.includes("lsc-hub") && h.includes('class="t-glass'), "plain themes leave the hub alone");
+dc.setConfig({ entity: "light.lamp", theme: "christmas" });
+h = dc._html(dc._model());
+check(h.includes('class="t-christmas') && h.includes("lsc-hub") && /--now:[\d.]+;--dx:\d+px;/.test(h) && ["thanksgiving", "winter"].every((t) => THEMES.includes(t)), "seasonal theme dresses the hub");
+dc.setConfig({ entity: "light.lamp" });
 
 // dragging the dial sends while moving (throttled), then once more on release
 dcalls.length = 0;

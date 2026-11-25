@@ -33,9 +33,11 @@ A bulb exposed as several lights that are never on together (a white centre and 
 ```yaml
 type: custom:light-dial-card
 entities: [light.office_center_lights, light.office_accent_lights]
-theme: auto        # glass (default) | midnight | paper | ember | ocean | forest | contrast | auto
+theme: auto        # glass (default) | midnight | paper | ember | ocean | forest | contrast | thanksgiving | christmas | winter | auto
 compact: true      # header, brightness slider and preset chips only
 ```
+
+Three seasonal themes add moving art behind the controls and dress the dial's centre: `thanksgiving` (falling leaves, a pumpkin), `christmas` (snow over a row of lit trees, Santa) and `winter` (snow, a snow-capped dial). The motion stops when the device asks for reduced motion.
 
 `theme: auto` uses midnight in dark mode and paper in light mode. On the dial card, the sun marker on the warmth slider shows a suggested warmth for the time of day; tap it to apply.
 
