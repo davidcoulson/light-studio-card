@@ -5,7 +5,7 @@ Two Home Assistant dashboard cards for one light, in a single file with no depen
 - `custom:light-studio-card`: brightness, presets, and warmth / colour / effect tabs that appear only when the light supports them.
 - `custom:light-dial-card`: the same controls around a brightness dial, with themes and a compact layout.
 
-![The studio card, the dial card and the dial card's compact layout](docs/cards.png)
+![The studio card, the dial card in the thanksgiving theme, and its compact layout in the christmas theme](docs/cards.png)
 
 The screenshots show the cards running on a pretend lamp outside Home Assistant.
 
@@ -43,9 +43,9 @@ compact: true      # header, brightness slider and preset chips only
 
 ### Themes
 
-The dial card has seven themes. `theme: auto` uses midnight in dark mode and paper in light mode.
+The dial card has seven themes and three seasonal ones. `theme: auto` uses midnight in dark mode and paper in light mode.
 
-![The dial card in each theme: glass, midnight, paper, ember, ocean, forest and contrast](docs/themes.png)
+![The dial card in each theme: glass, midnight, paper, ember, ocean, forest, contrast, thanksgiving, christmas and winter](docs/themes.png)
 
 Three seasonal themes add moving art behind the controls and dress the dial's centre: `thanksgiving` (falling leaves, a pumpkin), `christmas` (snow over a row of lit trees, Santa) and `winter` (snow, a snow-capped dial). Each card starts its animation at its own random point, so cards side by side don't move in step. The motion stops when the device asks for reduced motion.
 
