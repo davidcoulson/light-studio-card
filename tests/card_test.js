@@ -213,6 +213,7 @@ check(rejects({ entity: "light.x" }) && rejects({ entity: "media_player.o", them
 let mu = music(player(), { favorites: [{ name: "Jazz", media_content_id: "library://playlist/2" }, { name: "Focus", media_content_id: "library://playlist/3", media_content_type: "playlist" }] });
 h = mu.html();
 check(!h.includes("<i>x</i>") && h.includes("Song &lt;i&gt;x"), "music: title is escaped");
+check(h.indexOf('class="head"') < h.indexOf('class="vol"') && h.includes('<span class="st"><i></i>Playing</span>'), "music: the header leads the card with the status first, like the light dial card");
 check(music(player({ entity_picture: "http://ma:8095/x", entity_picture_local: "/api/proxy/o" })).html().includes('src="/api/proxy/o"') && music(player({ entity_picture: "http://ma:8095/x" })).html().includes('src="http://ma:8095/x"'),
   "music: Home Assistant's copy of the cover is used before the player's own URL");
 check(h.includes('class="pos">0:10<') && h.includes(">3:20<"), "music: position counts on from HA's last report while playing");

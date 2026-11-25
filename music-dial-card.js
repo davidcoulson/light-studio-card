@@ -1,6 +1,6 @@
 // music-dial-card - the light-dial-card's glass card for a media player: a volume dial
-// around the album art, the track, transport buttons and optional favourites. It lies
-// down beside the dial when the card is 520px wide or more.
+// around the album art, the track, transport buttons and optional favourites. Under the header it
+// lies down beside the dial when the card is 520px wide or more.
 //
 // It builds on light-studio-card.js, so add both files as dashboard resources.
 //
@@ -47,7 +47,8 @@ ha-card { display: flex; flex-direction: column; justify-content: space-between;
 ha-card.t-christmas { padding-bottom: 18px; }   /* no room to keep clear of the trees: the card sits over them */
 .side { display: contents; }
 .side > * { position: relative; z-index: 1; }   /* over a seasonal theme's art, like the card's own children */
-.head { order: -1; margin: 0; gap: 12px; align-items: center; }
+.head { margin: 0; gap: 12px; align-items: center; }
+.on .st i { background: currentColor; }   /* no light colour to tint the status dot with */
 .ico { width: 48px; height: 48px; --mdc-icon-size: 26px; color: inherit; }
 .name { font-size: 18px; }
 .round { width: 44px; height: 44px; }
@@ -80,11 +81,19 @@ ha-card.t-christmas { padding-bottom: 18px; }   /* no room to keep clear of the 
 .favs { flex-direction: row; gap: 6px; max-height: none; overflow-x: auto; }
 .favs .preset { flex: 1; justify-content: center; padding: 10px 12px; font-size: 14px; white-space: nowrap; }
 @container (min-width: 520px) {
-  ha-card, ha-card.t-christmas { flex-direction: row; align-items: center; gap: 18px; padding: 16px; }
-  .side { display: flex; flex-direction: column; justify-content: space-between; gap: 12px; flex: 1; min-width: 0; align-self: stretch; }
-  .vol { flex: none; width: clamp(200px, 44cqw, 300px); }
+  /* The light dial card's frame and header, so the two cards line up when a wall panel flips between them. */
+  ha-card, ha-card.t-christmas { display: grid; grid-template: auto minmax(0, 1fr) / auto minmax(0, 1fr); gap: 0 22px; padding: 22px; }
+  .head { grid-column: 1 / -1; gap: 16px; align-items: flex-start; margin-bottom: 18px; }
+  .ico { width: 64px; height: 64px; --mdc-icon-size: 34px; }
+  .name { font-size: 22px; }
+  /* The dial grows with the card's width, and gives way (still round) where the dashboard sets a height that leaves it less room. */
+  .vol { height: clamp(200px, 60cqw - 112px, 340px); max-height: 100%; justify-self: center; }   /* 60cqw - 112px leaves the buttons their 248px at 520px wide */
+  .side { display: flex; flex-direction: column; justify-content: space-between; gap: 12px; min-width: 0; }
   .now { text-align: left; }
-  .ctl { justify-content: space-between; }
+  .song { font-size: clamp(20px, 3.8cqw, 28px); white-space: normal; display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 2; }   /* text grows with the card; a long title gets two lines */
+  .now .sub { font-size: clamp(14px, 2.4cqw, 18px); }
+  .prog { font-size: clamp(12px, 2cqw, 15px); }
+  .ctl { justify-content: space-between; gap: 0; }   /* five buttons need all of a 520px card's column */
 }
 `;
 
@@ -138,18 +147,18 @@ ha-card.t-christmas { padding-bottom: 18px; }   /* no room to keep clear of the 
       const btn = (act, icon, label, cls = "", pressed) => `<button class="${cls}" data-act="${act}" title="${label}" aria-label="${label}" ${pressed == null ? "" : `aria-pressed="${pressed}"`} ${dis}><ha-icon icon="mdi:${icon}"></ha-icon></button>`;
       const stops = playing && !(feat & MP.PAUSE);   // a player that cannot pause (a radio stream) stops instead
       return `${open}
+        <div class="head">
+          <div class="ico"><ha-icon icon="${esc(cfg.icon || a.icon || "mdi:speaker")}"></ha-icon></div>
+          <div class="title"><div class="name">${esc(cfg.name || a.friendly_name || id)}</div>
+            <div class="sub"><span class="st"><i></i>${MP_STATE[st.state] || "Unknown"}</span>${this._area(id) ? " · " + esc(this._area(id)) : ""}</div></div>
+          ${feat & (off ? MP.TURN_ON : MP.TURN_OFF) ? btn("toggle", "power", "Power", "round pwr", !off) : ""}
+        </div>
         <div class="vol" ${canVol ? `data-slider="vol" ${sliderAttrs("Volume", v, 0, 100, v + "%")}` : ""}>
           ${src ? `<img class="glow" src="${src}" alt=""><img class="art" data-act="more" role="button" tabindex="0" src="${src}" alt="More info">`
       : `<div class="art" data-act="more" role="button" tabindex="0" aria-label="More info"><ha-icon icon="mdi:music"></ha-icon></div>`}
           ${volSvg(v, canVol, a.is_volume_muted)}
         </div>
         <div class="side">
-          <div class="head">
-            <div class="ico"><ha-icon icon="${esc(cfg.icon || a.icon || "mdi:speaker")}"></ha-icon></div>
-            <div class="title"><div class="name">${esc(cfg.name || a.friendly_name || id)}</div>
-              <div class="sub">${[this._area(id), MP_STATE[st.state] || "Unknown"].filter(Boolean).map(esc).join(" · ")}</div></div>
-            ${feat & (off ? MP.TURN_ON : MP.TURN_OFF) ? btn("toggle", "power", "Power", "round pwr", !off) : ""}
-          </div>
           <div class="now"><div class="song">${esc(a.media_title || (playing ? "Playing" : "Nothing playing"))}</div>
             <div class="sub">${[a.media_artist, a.media_album_name].filter(Boolean).map(esc).join(" · ")}</div></div>
           ${p ? `<div class="prog"><span class="pos">${clock(p[0])}</span><div class="bar"><i style="width:${(p[0] / p[1] * 100).toFixed(1)}%"></i></div><span>${clock(p[1])}</span></div>` : ""}
