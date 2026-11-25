@@ -11,6 +11,19 @@ The screenshots show the cards running on a pretend lamp outside Home Assistant.
 
 ## Install
 
+### Marketplace or HACS
+
+The card is not in the default catalogue, so add this repository yourself:
+
+- Home Assistant 2026.11 and newer: Settings > Marketplace > Add from link, and enter `davidcoulson/light-studio-card`.
+- Older versions with HACS: HACS > ⋮ > Custom repositories, and add `https://github.com/davidcoulson/light-studio-card` with type Dashboard.
+
+[![Open your Home Assistant instance and add this repository](https://my.home-assistant.io/badges/hacs_repository.svg)](https://my.home-assistant.io/redirect/hacs_repository/?owner=davidcoulson&repository=light-studio-card&category=plugin)
+
+Then install Light Studio Card from the list. The dashboard resource is added for you.
+
+### Manual
+
 Copy `light-studio-card.js` to `/config/www/` and add it as a dashboard resource:
 
 ```yaml
