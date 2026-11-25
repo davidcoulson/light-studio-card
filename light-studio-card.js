@@ -20,6 +20,7 @@
 // custom:light-dial-card takes the same config: a glass card with a brightness dial,
 // White / Color / Effects tabs and a time-of-day warmth suggestion. It also takes
 //   theme: glass | midnight | paper | ember | ocean | forest | contrast     # default glass
+//   theme: thanksgiving | christmas | winter    # seasonal: falling leaves or snow, and a dressed-up dial
 //   theme: auto        # midnight in dark mode, paper in light mode
 //   compact: true      # header, brightness slider and preset chips only
 
@@ -153,7 +154,7 @@ function dialFrac(dx, dy) {
   return d <= DIAL.span ? d / DIAL.span : d - DIAL.span < 360 - d ? 1 : 0;
 }
 // A grey track filled from Dim up to the handle in the light's colour, so it reads as a level, not a colour scale.
-function dialSvg(f, on, tint, pct) {
+function dialSvg(f, on, tint, pct, art = "") {
   const p = (v, r) => dialPoint(v, r).map((n) => n.toFixed(1)).join(" ");
   const sun = (v, s, lit) => {
     const [x, y] = dialPoint(v);
@@ -171,7 +172,7 @@ function dialSvg(f, on, tint, pct) {
     ${sun(0, 1, on)}${sun(1, 1.25, on && f > 0.97)}
     <text class="end" x="${dialPoint(0)[0].toFixed(1)}" y="167">Dim</text><text class="end" x="${dialPoint(1)[0].toFixed(1)}" y="167">Bright</text>
     ${on ? `<circle cx="${tx.toFixed(1)}" cy="${ty.toFixed(1)}" r="11" fill="#fff"/><circle cx="${tx.toFixed(1)}" cy="${ty.toFixed(1)}" r="5" fill="rgb(${tint})"/>` : ""}
-    <circle class="hub" data-act="toggle" role="button" tabindex="0" aria-label="Power" aria-pressed="${on}" cx="${DIAL.cx}" cy="${DIAL.cy}" r="50"/>
+    <circle class="hub" data-act="toggle" role="button" tabindex="0" aria-label="Power" aria-pressed="${on}" cx="${DIAL.cx}" cy="${DIAL.cy}" r="50"/>${art}
     ${on ? `<polygon points="${p(f, 45)} ${p(f - 0.035, 37)} ${p(f + 0.035, 37)}" fill="#1d1e22"/>` : ""}
     <text class="val ${on ? "" : "off"}" x="${DIAL.cx}" y="${DIAL.cy + 1}">${on ? `${pct}<tspan class="unit" dx="1">%</tspan>` : "Off"}</text>
   </svg>`;
@@ -260,6 +261,68 @@ ha-card { padding: 12px; border-radius: 26px; }
 .compact .preset { flex: 1 1 auto; min-width: 0; padding: 8px 5px; font-size: 12px; text-align: center; }
 `;
 
+// Seasonal dial themes: art behind the controls as SVG backgrounds, and a dressed-up hub.
+const svgUrl = (w, h, body) => `url("data:image/svg+xml,${encodeURIComponent(`<svg xmlns="http://www.w3.org/2000/svg" width="${w}" height="${h}" viewBox="0 0 ${w} ${h}">${body}</svg>`)}")`;
+const LEAF = "M21.79,13L16,16L17,18L13,17.25V21H11V17.25L7,18L8,16L2.21,13L3.21,11.27L1.61,8L5.21,7.77L6.21,6L9.63,9.9L8,5H10L12,2L14,5H16L14.37,9.9L17.79,6L18.79,7.73L22.39,7.96L20.79,11.19L21.79,13Z";   // leaf-maple, Material Design Icons (Apache 2.0)
+const TREE = "M10 21V18H3L8 13H5L10 8H7L12 3L17 8H14L19 13H16L21 18H14V21Z";
+// Both shapes sit in a 24 x 24 box: centred on x, y, turned and scaled.
+const stamp = (d, list) => list.map(([x, y, rot, s, fill]) => `<path transform="translate(${x} ${y}) rotate(${rot}) scale(${s}) translate(-12 -12)" d="${d}" fill="${fill}"/>`).join("");
+const flakes = (pts) => pts.map(([x, y, r, o]) => `<circle cx="${x}" cy="${y}" r="${r}" fill="#fff" opacity="${o}"/>`).join("");
+const LEAVES = [svgUrl(240, 300, stamp(LEAF, [[42, 52, 20, 1.35, "#e8912d"], [172, 112, -40, 1.6, "#c8502a"], [92, 204, 75, 1.15, "#f0c04a"], [204, 258, 150, 1.2, "#d9742a"], [26, 266, -110, .95, "#b5432a"]])),
+  svgUrl(180, 220, stamp(LEAF, [[30, 40, -60, .8, "#f0c04a"], [130, 90, 35, .7, "#e8912d"], [70, 170, 120, .75, "#c8502a"]]))];
+const SNOW = [svgUrl(200, 200, flakes([[18, 22, 2.2, .9], [64, 80, 1.6, .7], [120, 30, 2.6, .85], [170, 110, 1.8, .7], [36, 150, 2.4, .8], [96, 176, 1.5, .6], [150, 170, 2.1, .8], [186, 40, 1.4, .6], [84, 124, 2, .75]])),
+  svgUrl(140, 140, flakes([[12, 30, 1.1, .7], [50, 12, .9, .6], [88, 60, 1.3, .7], [124, 100, 1, .6], [30, 96, 1.2, .65], [70, 126, .9, .55], [108, 22, 1, .6]]))];
+// A row of three trees standing on snow, 170 x 64. Half the bulbs are drawn lit; the other half twinkle on a layer above.
+const ROW = [[28, 2.4, "#1d5c40"], [84, 2.9, "#174a34"], [136, 1.9, "#236b4a"]].map(([x, s, fill]) => [x, 58 - 9 * s, 0, s, fill]);
+const BULBS = [[12, 6.2], [10.6, 7.2], [13.2, 10.2], [9.4, 11.6], [14.6, 12], [11.2, 13.9], [7, 16.4], [10.2, 15.3], [13.6, 16.8], [17, 16.2]];
+const bulbs = (odd) => ROW.map(([x, y, , s]) => BULBS.map(([u, v], i) => {
+  const at = `cx="${x + (u - 12) * s}" cy="${y + (v - 12) * s}" fill="${["#ff5252", "#ffd24d", "#4da3ff", "#fff"][i % 4]}"`;
+  return i % 2 === odd ? `<circle ${at} r="3.4" opacity=".28"/><circle ${at} r="1.3"/>` : "";
+}).join("")).join("");
+const TREES = [svgUrl(170, 64, stamp(TREE, ROW) + bulbs(1) + `<rect y="57" width="170" height="7" fill="#eaf3ff"/>`), svgUrl(170, 64, bulbs(0))];
+const HUB_SNOW = "M58 73A50 50 0 0 1 142 73C136 80 128 70 120 76C113 81 108 72 100 76C92 80 88 71 80 77C72 82 64 72 58 73Z";
+// Drawn over the dial's hub: a pumpkin, Santa with the level in his beard, a cap of snow.
+const HUB_ART = {
+  thanksgiving: `<defs><radialGradient id="lsc-pk" cx=".4" cy=".32" r=".8"><stop offset="0" stop-color="#ffb055"/><stop offset="1" stop-color="#e2700f"/></radialGradient></defs>
+    <g fill="none" stroke="#8a3c00" stroke-opacity=".3" stroke-width="1.5"><ellipse cx="100" cy="100" rx="17" ry="49.2"/><ellipse cx="100" cy="100" rx="35" ry="49.6"/></g>
+    <path d="M96.5 52.5C96 45 99 41.5 104.5 40.5L106.5 44.5C103.5 45.5 102.5 48 102.8 52.5Z" fill="#5d7a2e"/>`,
+  christmas: `<defs><clipPath id="lsc-hub"><circle cx="100" cy="100" r="50"/></clipPath></defs>
+    <ellipse cx="100" cy="81" rx="31" ry="15" fill="#f6c9a4"/><rect x="50" y="50" width="100" height="19" fill="#c8202b" clip-path="url(#lsc-hub)"/>
+    <path d="M78 55C96 38 138 42 151.5 73L144 77A50 50 0 0 0 78 55Z" fill="#c8202b"/>
+    <g fill="#fff" stroke="#dcdce4" stroke-width=".8"><rect x="52" y="64" width="96" height="11" rx="5.5"/><circle cx="148.5" cy="77" r="6"/></g>
+    <circle cx="88" cy="82" r="2.4" fill="#2a1c16"/><circle cx="112" cy="82" r="2.4" fill="#2a1c16"/>
+    <circle cx="79" cy="87" r="4.5" fill="#f09a8a" opacity=".55"/><circle cx="121" cy="87" r="4.5" fill="#f09a8a" opacity=".55"/>
+    <g fill="#fff" stroke="#dcdce4" stroke-width=".8"><ellipse cx="91.5" cy="93" rx="10" ry="5"/><ellipse cx="108.5" cy="93" rx="10" ry="5"/></g><circle cx="100" cy="89" r="4" fill="#e8907c"/>`,
+  winter: `<path d="${HUB_SNOW}" transform="translate(0 2)" fill="#3c6496" opacity=".25"/><path d="${HUB_SNOW}" fill="#fff"/>`,
+};
+const SEASON = ":is(.t-thanksgiving, .t-christmas, .t-winter)";
+const NIGHT = "--lsc-edge: rgba(190,215,255,.28); --lsc-well: rgba(0,6,20,.35);";
+const SEASON_CSS = `
+${SEASON} > * { position: relative; z-index: 1; }
+/* --now: the card rebuilds its markup on every change, and each layer picks its animation up where it was */
+${SEASON}::before, ${SEASON}::after { content: ""; position: absolute; inset: 0; pointer-events: none; animation-delay: calc(var(--now, 0) * -1s) !important; }
+@keyframes lsc-fall { from { background-position: var(--dx, 0) 0; } to { background-position: var(--dx, 0) var(--tile); } }
+@keyframes lsc-sway { from { transform: translateX(-10px); } to { transform: translateX(10px); } }
+@keyframes lsc-twinkle { 0%, 40% { opacity: 1; } 60%, 100% { opacity: .12; } }
+@media (prefers-reduced-motion: reduce) { ${SEASON}::before, ${SEASON}::after { animation: none !important; } }
+ha-card.t-thanksgiving { --lsc-card: linear-gradient(165deg, #5a2f22, #24130f 78%); --lsc-edge: rgba(255,180,110,.3); --lsc-sel: #ffd9a0; --lsc-sel-text: #2b140c;
+  --lsc-well: rgba(20,8,4,.4); --lsc-chip: rgba(255,200,140,.12); }
+.t-thanksgiving::before { inset: 0 -12px; background: ${LEAVES[0]} 0 0 / 240px 300px; --tile: 300px; opacity: .55; animation: lsc-fall 24s linear infinite, lsc-sway 7s ease-in-out infinite alternate; }
+.t-thanksgiving::after { inset: 0 -12px; background: ${LEAVES[1]} 0 0 / 180px 220px; --tile: 220px; opacity: .3; animation: lsc-fall 15s linear infinite, lsc-sway 5s ease-in-out infinite alternate-reverse; }
+.t-thanksgiving .hub { fill: url(#lsc-pk); }
+.t-thanksgiving .val { fill: #3b1c08; }
+ha-card.t-christmas { ${NIGHT} --lsc-card: ${TREES[0]} repeat-x var(--dx, 0) 100% / 170px 64px, linear-gradient(180deg, #14263f, #0b1422); --lsc-sel: #c8202b; --lsc-sel-text: #fff; padding-bottom: 82px; }
+.t-christmas::before, .t-winter::before { background: ${SNOW[0]} 0 0 / 200px 200px; --tile: 200px; opacity: .8; animation: lsc-fall 13s linear infinite; }
+.t-christmas::after { inset: auto 0 0; height: 64px; background: ${TREES[1]} repeat-x var(--dx, 0) 0 / 170px 64px; animation: lsc-twinkle 1.6s ease-in-out infinite alternate; }
+.t-christmas .val { transform: translateY(15px); font-size: 24px; }
+.t-christmas .val.off { font-size: 20px; }
+ha-card.t-winter { ${NIGHT} --lsc-sel: #eaf3ff; --lsc-sel-text: #0f1b30;
+  --lsc-card: radial-gradient(ellipse 110px 19px at 18% 100%, #eaf3ff 97%, transparent), radial-gradient(ellipse 150px 15px at 52% 100%, #dfeafa 97%, transparent),
+    radial-gradient(ellipse 120px 21px at 88% 100%, #eaf3ff 97%, transparent), linear-gradient(180deg, #1c2e50, #0d1626); }
+.t-winter::after { background: ${SNOW[1]} 0 0 / 140px 140px; --tile: 140px; opacity: .7; animation: lsc-fall 8s linear infinite; }
+.t-winter .hub { fill: #dfeaf7; }
+`;
+
 // The dial variant: the same layout pieces, restyled as a frosted glass card.
 const DIAL_CSS = CSS + `
 ha-card { padding: 22px; border-radius: 34px; border: 1px solid var(--lsc-edge);
@@ -303,6 +366,7 @@ ha-card.t-forest { --lsc-card: linear-gradient(165deg, #3a5241, #1a251e 75%); --
 ha-card.t-contrast { --lsc-card: #000; --lsc-edge: rgba(255,255,255,.6); --lsc-shadow: none; --lsc-dim: rgba(255,255,255,.8);
   --lsc-well: #000; --lsc-chip: rgba(255,255,255,.16); --glow-a: 0 !important; border-radius: 18px; }
 .t-contrast .presets, .t-contrast .tabs { border: 1px solid var(--lsc-edge); }
+${SEASON_CSS}
 :host { display: block; container-type: inline-size; }
 .compact .head { margin-bottom: 12px; }
 .compact .presets { flex-direction: row; overflow-x: auto; max-height: none; gap: 6px; background: none; border: 0; padding: 0; }
@@ -312,7 +376,7 @@ ha-card.t-contrast { --lsc-card: #000; --lsc-edge: rgba(255,255,255,.6); --lsc-s
 @container (max-width: 420px) {${NARROW}}
 @media (max-width: 420px) {${NARROW}}
 `;
-const THEMES = ["glass", "midnight", "paper", "ember", "ocean", "forest", "contrast"];
+const THEMES = ["glass", "midnight", "paper", "ember", "ocean", "forest", "contrast", ...Object.keys(HUB_ART)];
 
 class LightStudioCard extends HTMLElement {
   setConfig(config) {
@@ -643,13 +707,16 @@ class LightDialCard extends LightStudioCard {
 
   _html(m) {
     const { on, na, tint, v, c, head, presetRows, tab, tabBar, readout, body, brightness } = this._parts(m);
-    const open = `<ha-card class="t-${this._config.theme === "auto" ? (this._hass.themes?.darkMode ? "midnight" : "paper") : this._config.theme || "glass"} ${this._config.compact ? "compact" : ""} ${on ? "on" : ""} ${na ? "na" : ""}" style="--tint:${tint};--glow:${tint};--glow-a:${on ? 0.22 : 0}">`;
+    const theme = this._config.theme === "auto" ? (this._hass.themes?.darkMode ? "midnight" : "paper") : this._config.theme || "glass";
+    this._seed ??= Math.random();   // each card starts its seasonal art at its own point, so cards side by side don't move in step
+    const now = (Date.now() - (this._t0 ??= Date.now())) / 1000 + this._seed * 600;   // seconds this card has been up: keeps the animation going across renders
+    const open = `<ha-card class="t-${theme} ${this._config.compact ? "compact" : ""} ${on ? "on" : ""} ${na ? "na" : ""}" style="--now:${now};--dx:${Math.round(this._seed * 240)}px;--tint:${tint};--glow:${tint};--glow-a:${on ? 0.22 : 0}">`;
     if (this._config.compact) return `${open}${head}<div class="body" ${na ? "inert" : ""}>${brightness}<div class="panel presets">${presetRows}</div></div></ha-card>`;
     return `${open}
       ${head}
       <div class="body" ${na ? "inert" : ""}>
         <div class="top">
-          <div class="dial" ${c.dim ? `data-slider="pct" data-dial="1" ${sliderAttrs("Brightness", v.pct, 1, 100, on ? v.pct + "%" : "Off")}` : ""}>${dialSvg(on ? (v.pct - 1) / 99 : 0, on, tint, v.pct)}</div>
+          <div class="dial" ${c.dim ? `data-slider="pct" data-dial="1" ${sliderAttrs("Brightness", v.pct, 1, 100, on ? v.pct + "%" : "Off")}` : ""}>${dialSvg(on ? (v.pct - 1) / 99 : 0, on, tint, v.pct, HUB_ART[theme])}</div>
           <div class="panel presets">${presetRows}</div></div>
         ${tab ? `<div class="row">${tabBar}<span class="v">${readout}</span></div>${body}` : ""}
       </div></ha-card>`;
