@@ -42,6 +42,7 @@ customElements.whenDefined("light-dial-card").then(() => {
   }
 
   const MUSIC_CSS = Dial.css + `
+:host { height: 100%; }   /* fill a dashboard cell that has a set height; no effect where the height is automatic */
 ha-card { display: flex; flex-direction: column; justify-content: space-between; gap: 14px; height: 100%; box-sizing: border-box; padding: 18px; border-radius: 34px; }
 ha-card.t-christmas { padding-bottom: 18px; }   /* no room to keep clear of the trees: the card sits over them */
 .side { display: contents; }
@@ -51,12 +52,12 @@ ha-card.t-christmas { padding-bottom: 18px; }   /* no room to keep clear of the 
 .name { font-size: 18px; }
 .round { width: 44px; height: 44px; }
 .na :is(.vol, .now, .prog, .ctl, .favs) { opacity: .4; }
-.vol { position: relative; flex: none; width: 100%; max-width: 252px; aspect-ratio: 1; margin: 0 auto; }
+.vol { position: relative; flex: 0 1 min(252px, 100cqw - 36px); min-height: 140px; aspect-ratio: 1; align-self: center; }   /* shrinks, still round, when the dashboard gives the card less height */
 .vol[data-slider] { touch-action: none; }
 .vol > svg { position: absolute; inset: 0; width: 100%; height: 100%; overflow: visible; pointer-events: none; }
 .art, .glow { position: absolute; inset: 15.8%; width: 68.4%; height: 68.4%; border-radius: 50%; object-fit: cover; }
 .art { cursor: pointer; display: grid; place-items: center; background: var(--lsc-chip); color: var(--lsc-dim); --mdc-icon-size: 56px; }
-.glow { filter: blur(30px) saturate(1.5); transform: scale(1.3); opacity: .5; pointer-events: none; }   /* the cover, blurred, tints the card */
+.glow { filter: blur(30px) saturate(1.5); transform: scale(1.3); opacity: .5; pointer-events: none; will-change: filter; }   /* the cover, blurred, tints the card; will-change: a wall panel's graphics chip draws stray blocks without it */
 .t-contrast .glow { display: none; }
 .trk { stroke: rgba(128,128,128,.28); }
 .lvl { stroke: var(--lsc-text); }
@@ -81,7 +82,7 @@ ha-card.t-christmas { padding-bottom: 18px; }   /* no room to keep clear of the 
 @container (min-width: 520px) {
   ha-card, ha-card.t-christmas { flex-direction: row; align-items: center; gap: 18px; padding: 16px; }
   .side { display: flex; flex-direction: column; justify-content: space-between; gap: 12px; flex: 1; min-width: 0; align-self: stretch; }
-  .vol { width: clamp(200px, 44cqw, 300px); max-width: none; margin: 0; }
+  .vol { flex: none; width: clamp(200px, 44cqw, 300px); }
   .now { text-align: left; }
   .ctl { justify-content: space-between; }
 }
@@ -131,7 +132,8 @@ ha-card.t-christmas { padding-bottom: 18px; }   /* no room to keep clear of the 
       const na = st.state === "unavailable", off = st.state === "off", playing = st.state === "playing", dis = na ? "disabled" : "";
       const [, open] = themedCard(this, `${off || na ? "" : "on"} ${na ? "na" : ""}`, "--glow:0,0,0;--glow-a:0");   // the cover gives the glow, not a light's colour
       const v = this._vol(st), canVol = !na && !!(feat & MP.VOLUME), p = mediaPos(st);
-      const pic = typeof a.entity_picture === "string" && a.entity_picture;
+      // Home Assistant's own copy first: a player's direct picture URL can be plain http, which an https dashboard blocks.
+      const pic = [a.entity_picture_local, a.entity_picture].find((u) => typeof u === "string" && u);
       const src = pic && esc(pic.startsWith("/") ? this._hass.hassUrl?.(pic) ?? pic : pic);
       const btn = (act, icon, label, cls = "", pressed) => `<button class="${cls}" data-act="${act}" title="${label}" aria-label="${label}" ${pressed == null ? "" : `aria-pressed="${pressed}"`} ${dis}><ha-icon icon="mdi:${icon}"></ha-icon></button>`;
       const stops = playing && !(feat & MP.PAUSE);   // a player that cannot pause (a radio stream) stops instead
