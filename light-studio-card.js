@@ -23,6 +23,8 @@
 //   theme: thanksgiving | christmas | winter    # seasonal: falling leaves or snow, and a dressed-up dial
 //   theme: auto        # midnight in dark mode, paper in light mode
 //   compact: true      # header, brightness slider and preset chips only
+//
+// music-dial-card.js, next to this file, is the same glass card for a media player; it needs this file loaded.
 
 const SWATCHES = [["Red", 0], ["Orange", 23], ["Amber", 40], ["Green", 120],
                   ["Cyan", 185], ["Blue", 230], ["Violet", 275], ["Magenta", 310]];
@@ -138,20 +140,20 @@ function recommendedK(hour, c) {
 
 // Brightness dial: a 230° arc open at the bottom, in a 200 x 172 viewBox.
 const DIAL = { cx: 100, cy: 100, r: 76, start: 205, span: 230, w: 200, h: 172 };
-function dialPoint(f, r = DIAL.r) {
-  const a = (DIAL.start - f * DIAL.span) * Math.PI / 180;
-  return [DIAL.cx + r * Math.cos(a), DIAL.cy - r * Math.sin(a)];
+function dialPoint(f, r, g = DIAL) {
+  const a = (g.start - f * g.span) * Math.PI / 180;
+  return [g.cx + (r ?? g.r) * Math.cos(a), g.cy - (r ?? g.r) * Math.sin(a)];
 }
 // dx, dy from the centre (y down) -> 0..1 along the arc; the gap at the bottom snaps to the nearer end.
-const dialDeg = (dx, dy) => (((DIAL.start - Math.atan2(-dy, dx) * 180 / Math.PI) % 360) + 360) % 360;
+const dialDeg = (dx, dy, g = DIAL) => (((g.start - Math.atan2(-dy, dx) * 180 / Math.PI) % 360) + 360) % 360;
 // Only the track, with a finger's margin, starts a drag; the rest of the dial lets the page scroll.
 function dialHit(dx, dy) {
   const r = Math.hypot(dx, dy), d = dialDeg(dx, dy);
   return r >= 53 && r <= 99 && (d <= DIAL.span + 17 || d >= 343);
 }
-function dialFrac(dx, dy) {
-  const d = dialDeg(dx, dy);
-  return d <= DIAL.span ? d / DIAL.span : d - DIAL.span < 360 - d ? 1 : 0;
+function dialFrac(dx, dy, g = DIAL) {
+  const d = dialDeg(dx, dy, g);
+  return d <= g.span ? d / g.span : d - g.span < 360 - d ? 1 : 0;
 }
 // A grey track filled from Dim up to the handle in the light's colour, so it reads as a level, not a colour scale.
 function dialSvg(f, on, tint, pct, art = "") {
@@ -458,6 +460,12 @@ class LightStudioCard extends HTMLElement {
     return Date.now() < until && this._hass.states[id]?.state !== "on" ? id : null;
   }
 
+  // Name of the area the entity, or else its device, is in.
+  _area(id) {
+    const ent = this._hass.entities?.[id];
+    return this._hass.areas?.[ent?.area_id || this._hass.devices?.[ent?.device_id]?.area_id]?.name;
+  }
+
   _render() {
     if (!this._config || !this._hass) return;
     if (!this.shadowRoot) {
@@ -503,9 +511,7 @@ class LightStudioCard extends HTMLElement {
     const tab = tabs.includes(this._tab) ? this._tab
       : effectOn ? "fx" : colorMode ? "hsi" : m.active === own.ct ? "cct" : tabs.find((t) => own[{ cct: "ct", hsi: "color", fx: "fx" }[t]] === m.active) || tabs[0];
     const presets = cfg.presets || defaultPresets(c);
-    const ent = this._hass.entities?.[m.active];
-    const areaId = ent?.area_id || this._hass.devices?.[ent?.device_id]?.area_id;
-    const where = [this._hass.areas?.[areaId]?.name, cfg.subtitle].filter(Boolean).map(esc).join(" · ");
+    const where = [this._area(m.active), cfg.subtitle].filter(Boolean).map(esc).join(" · ");
     const part = m.parts.length > 1 && on
       ? " · " + esc(partLabels(m.parts.map(([id, s]) => s.attributes.friendly_name || id))[m.parts.findIndex(([id]) => id === m.active)]) : "";
     const status = na ? "Unavailable" : on ? `On${part} · ${duration(st.last_changed)}` : st.state === "off" ? "Off" : "Unknown";
@@ -699,18 +705,26 @@ class LightStudioCard extends HTMLElement {
 
 LightStudioCard.css = CSS;
 
+function checkTheme(config) {
+  if (config?.theme && config.theme !== "auto" && !THEMES.includes(config.theme)) throw new Error(`theme: must be auto or one of ${THEMES.join(", ")}`);
+}
+// [theme, opening <ha-card> tag] for a themed card.
+function themedCard(card, cls, style) {
+  const cfg = card._config, theme = cfg.theme === "auto" ? (card._hass.themes?.darkMode ? "midnight" : "paper") : cfg.theme || "glass";
+  card._seed ??= Math.random();   // each card starts its seasonal art at its own point, so cards side by side don't move in step
+  const now = (Date.now() - (card._t0 ??= Date.now())) / 1000 + card._seed * 600;   // seconds this card has been up: keeps the animation going across renders
+  return [theme, `<ha-card class="t-${theme} ${cls}" style="--now:${now};--dx:${Math.round(card._seed * 240)}px;${style}">`];
+}
+
 class LightDialCard extends LightStudioCard {
   setConfig(config) {
-    if (config?.theme && config.theme !== "auto" && !THEMES.includes(config.theme)) throw new Error(`theme: must be auto or one of ${THEMES.join(", ")}`);
+    checkTheme(config);
     super.setConfig(config);
   }
 
   _html(m) {
     const { on, na, tint, v, c, head, presetRows, tab, tabBar, readout, body, brightness } = this._parts(m);
-    const theme = this._config.theme === "auto" ? (this._hass.themes?.darkMode ? "midnight" : "paper") : this._config.theme || "glass";
-    this._seed ??= Math.random();   // each card starts its seasonal art at its own point, so cards side by side don't move in step
-    const now = (Date.now() - (this._t0 ??= Date.now())) / 1000 + this._seed * 600;   // seconds this card has been up: keeps the animation going across renders
-    const open = `<ha-card class="t-${theme} ${this._config.compact ? "compact" : ""} ${on ? "on" : ""} ${na ? "na" : ""}" style="--now:${now};--dx:${Math.round(this._seed * 240)}px;--tint:${tint};--glow:${tint};--glow-a:${on ? 0.22 : 0}">`;
+    const [theme, open] = themedCard(this, `${this._config.compact ? "compact" : ""} ${on ? "on" : ""} ${na ? "na" : ""}`, `--tint:${tint};--glow:${tint};--glow-a:${on ? 0.22 : 0}`);
     if (this._config.compact) return `${open}${head}<div class="body" ${na ? "inert" : ""}>${brightness}<div class="panel presets">${presetRows}</div></div></ha-card>`;
     return `${open}
       ${head}
@@ -724,6 +738,9 @@ class LightDialCard extends LightStudioCard {
 }
 LightDialCard.css = DIAL_CSS;
 LightDialCard.dial = true;
+
+// What music-dial-card.js builds on.
+LightStudioCard.kit = { esc, clamp, num, sliderAttrs, dialPoint, dialDeg, dialFrac, checkTheme, themedCard };
 
 if (typeof customElements !== "undefined" && !customElements.get("light-studio-card")) {
   customElements.define("light-studio-card", LightStudioCard);

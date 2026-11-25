@@ -191,5 +191,55 @@ check(h.includes('role="slider"') && h.includes('aria-valuenow="35"') && h.inclu
 h = card({ entity: "light.x" }, { "light.x": light({}, "unavailable") }).html();
 check(h.includes("inert") && h.includes("disabled"), "an unavailable card takes no input");
 
+// music-dial-card.js, loaded on top of the light card
+const defs = {};
+ctx.customElements = { whenDefined: () => ({ then: (f) => f() }), get: (n) => ({ "light-dial-card": LightDialCard })[n], define: (n, c) => { defs[n] = c; } };
+vm.runInContext(fs.readFileSync(path.join(__dirname, "..", "music-dial-card.js"), "utf8"), ctx);
+const Music = defs["music-dial-card"];
+const ALL = 1 | 4 | 16 | 32 | 128 | 256 | 32768 | 262144;   // pause, volume, previous, next, on, off, shuffle, repeat
+const player = (attrs = {}, state = "playing") => ({ state, attributes: { friendly_name: "Office Speaker", supported_features: ALL, volume_level: 0.4,
+  media_title: "Song <i>x</i>", media_artist: "Artist", media_duration: 200, media_position: 5, media_position_updated_at: new Date(Date.now() - 5000).toISOString(),
+  shuffle: false, repeat: "off", media_content_id: "library://playlist/2", ...attrs } });
+const music = (st, cfg = {}) => {
+  const calls = [];
+  const c = new Music();
+  c.setConfig({ entity: "media_player.o", ...cfg });
+  c._hass = { states: { "media_player.o": st }, callService: (d, s, data) => calls.push([d + "." + s, data]) };
+  return { c, calls, html: () => c._html(c._model()), tap: (act, i) => { c._click({ composedPath: () => [{ dataset: { act, i } }] }); return calls.at(-1); } };
+};
+const rejects = (cfg) => { try { new Music().setConfig(cfg); } catch { return true; } return false; };
+check(rejects({ entity: "light.x" }) && rejects({ entity: "media_player.o", theme: "nope" }) && rejects({ entity: "media_player.o", favorites: [{ name: "Jazz" }] }), "music: rejects a light, an unknown theme and a favourite without an id");
+
+let mu = music(player(), { favorites: [{ name: "Jazz", media_content_id: "library://playlist/2" }, { name: "Focus", media_content_id: "library://playlist/3", media_content_type: "playlist" }] });
+h = mu.html();
+check(!h.includes("<i>x</i>") && h.includes("Song &lt;i&gt;x"), "music: title is escaped");
+check(h.includes('class="pos">0:10<') && h.includes(">3:20<"), "music: position counts on from HA's last report while playing");
+check(h.includes("VOL 40") && h.includes('aria-valuenow="40"') && h.includes('stroke-dasharray="40 100"'), "music: dial shows the volume");
+check((h.match(/preset sel/g) || []).length === 1 && h.indexOf("preset sel") < h.indexOf("Jazz"), "music: the playing favourite is highlighted");
+check(mu.tap("play")[0] === "media_player.media_play_pause" && mu.tap("next")[0] === "media_player.media_next_track" && mu.tap("prev")[0] === "media_player.media_previous_track", "music: transport buttons");
+check(mu.tap("shuffle")[1].shuffle === true && mu.tap("repeat")[1].repeat === "all" && mu.tap("toggle")[0] === "media_player.turn_off", "music: shuffle, repeat and power");
+check(music(player({ repeat: "one" })).tap("repeat")[1].repeat === "off", "music: repeat cycles back to off");
+check(mu.tap("fav", "0")[1].media_content_type === "music" && mu.tap("fav", "1")[1].media_content_type === "playlist" && mu.calls.at(-1)[1].media_content_id === "library://playlist/3", "music: a favourite plays its media");
+
+// the ring is the slider, the album art inside it is not
+const press = (x, y) => ({ button: 0, pointerId: 1, clientX: x, clientY: y, preventDefault() {},
+  composedPath: () => [{ dataset: { slider: "vol" }, getBoundingClientRect: () => ({ left: 0, top: 0, width: 240, height: 240 }) }] });
+mu.c._drag(press(120, 120));
+check(!mu.c._endDrag && !mu.calls.some((c) => c[0].endsWith("volume_set")), "music: pressing the album art does not change the volume");
+mu.c._drag(press(120, 16));
+check(mu.calls.at(-1)[0] === "media_player.volume_set" && mu.calls.at(-1)[1].volume_level === 0.5, "music: pressing the top of the ring sets 50 %");
+win.pointerup({ pointerId: 1, clientX: 224, clientY: 120 });
+check(mu.calls.at(-1)[1].volume_level === 0.83 && !mu.c._endDrag && mu.html().includes("VOL 83"), "music: releasing the drag sends and shows the last level");
+mu.c._key({ key: "ArrowLeft", composedPath: () => [{ dataset: { slider: "vol" } }], preventDefault() {} });
+check(mu.calls.at(-1)[1].volume_level === 0.78, "music: arrow keys step the volume");
+
+mu = music(player({ supported_features: 0, media_duration: undefined }, "idle"));
+h = mu.html();
+check(!/data-slider|skip-next|shuffle|pwr|class="prog"/.test(h) && mu.tap("play")[0] === "media_player.media_play", "music: a bare player shows only play");
+mu = music(player({ supported_features: 4 }));
+check(mu.html().includes("mdi:stop") && mu.tap("play")[0] === "media_player.media_stop", "music: a player that cannot pause stops");
+h = music(player({}, "unavailable")).html();
+check(h.includes("disabled") && !h.includes("data-slider") && h.includes("Unavailable"), "music: an unavailable player takes no input");
+
 console.log(failures ?`${failures} failed` : "all passed");
 process.exit(failures ? 1 : 0);
