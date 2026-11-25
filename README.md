@@ -5,6 +5,10 @@ Two Home Assistant dashboard cards for one light, in a single file with no depen
 - `custom:light-studio-card`: brightness, presets, and warmth / colour / effect tabs that appear only when the light supports them.
 - `custom:light-dial-card`: the same controls around a brightness dial, with themes and a compact layout.
 
+![The studio card, the dial card and the dial card's compact layout](docs/cards.png)
+
+The screenshots show the cards running on a pretend lamp outside Home Assistant.
+
 ## Install
 
 Copy `light-studio-card.js` to `/config/www/` and add it as a dashboard resource:
@@ -37,9 +41,21 @@ theme: auto        # glass (default) | midnight | paper | ember | ocean | forest
 compact: true      # header, brightness slider and preset chips only
 ```
 
-Three seasonal themes add moving art behind the controls and dress the dial's centre: `thanksgiving` (falling leaves, a pumpkin), `christmas` (snow over a row of lit trees, Santa) and `winter` (snow, a snow-capped dial). The motion stops when the device asks for reduced motion.
+### Themes
 
-`theme: auto` uses midnight in dark mode and paper in light mode. On the dial card, the sun marker on the warmth slider shows a suggested warmth for the time of day; tap it to apply.
+The dial card has seven themes. `theme: auto` uses midnight in dark mode and paper in light mode.
+
+![The dial card in each theme: glass, midnight, paper, ember, ocean, forest and contrast](docs/themes.png)
+
+Three seasonal themes add moving art behind the controls and dress the dial's centre: `thanksgiving` (falling leaves, a pumpkin), `christmas` (snow over a row of lit trees, Santa) and `winter` (snow, a snow-capped dial). Each card starts its animation at its own random point, so cards side by side don't move in step. The motion stops when the device asks for reduced motion.
+
+![The thanksgiving, christmas and winter themes](docs/seasonal.png)
+
+Seasonal presets like the ones in the screenshot are set with `presets:`; the themes change only the look.
+
+### Warmth suggestion
+
+On the dial card, the sun marker on the warmth slider shows a suggested warmth for the time of day; tap it to apply.
 
 ## Test
 
