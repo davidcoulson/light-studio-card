@@ -8,14 +8,14 @@
 //   entity: media_player.office_speaker
 //   name: Office Speaker                   # optional
 //   icon: mdi:speaker                      # optional
-//   theme: midnight                        # optional, the same values as light-dial-card
+//   theme: midnight                        # optional, the same values as light-dial-card; a seasonal one dresses the album art too
 //   favorites:                             # optional buttons that start something playing
 //     - { name: Jazz, media_content_id: "library://playlist/12", media_content_type: playlist }
 
 customElements.whenDefined("light-dial-card").then(() => {
   if (customElements.get("music-dial-card")) return;
   const Dial = customElements.get("light-dial-card"), Base = Object.getPrototypeOf(Dial);   // Base is LightStudioCard
-  const { esc, clamp, num, sliderAttrs, dialPoint, dialDeg, dialFrac, checkTheme, themedCard } = Base.kit;
+  const { esc, clamp, num, sliderAttrs, dialPoint, dialDeg, dialFrac, checkTheme, themedCard, HUB_ART } = Base.kit;
 
   // Volume dial: a 270° arc open at the bottom around the album art, in a 240 x 240 viewBox.
   const VOL = { cx: 120, cy: 120, r: 104, start: 225, span: 270 };
@@ -29,15 +29,16 @@ customElements.whenDefined("light-dial-card").then(() => {
     const run = st.state === "playing" ? (now - new Date(a.media_position_updated_at)) / 1000 : 0;
     return [clamp(pos + (run > 0 ? run : 0), 0, dur), dur];
   }
-  function volSvg(v, live, muted) {
+  // art: a seasonal theme's hub art, drawn for a 100-wide hub at 100, 100 and scaled up to the album art. A cover wears the stem or the snow; with no cover it is the whole pumpkin or a snowy disc. Christmas gets the snow too, not Santa.
+  function volSvg(v, live, muted, art, cover) {
     const p = (f) => dialPoint(f, null, VOL).map((n) => n.toFixed(1)).join(" ");
     const arc = `d="M${p(0)} A${VOL.r} ${VOL.r} 0 1 1 ${p(1)}" fill="none" stroke-width="12" stroke-linecap="round"`;
     const [x, y] = p(v / 100).split(" ");
     return `<svg viewBox="0 0 240 240" aria-hidden="true">
-      <path class="trk" ${arc}/>
+      <path class="trk" ${arc}/><circle class="rim" cx="120" cy="120" r="82"/>
+      ${art ? `<g class="${cover ? "cover" : ""}" transform="translate(120 120) scale(1.64) translate(-100 -100)">${cover ? "" : '<circle class="hub" cx="100" cy="100" r="50"/>'}${art}</g>` : ""}
       ${live ? `<path class="lvl" ${arc} pathLength="100" stroke-dasharray="${v} 100"/><circle class="knob" cx="${x}" cy="${y}" r="10"/>
       <text class="vl" x="120" y="229">${muted ? "MUTED" : "VOL " + v}</text>` : ""}
-      <circle class="rim" cx="120" cy="120" r="82"/>
     </svg>`;
   }
 
@@ -64,6 +65,8 @@ ha-card.t-christmas { padding-bottom: 18px; }   /* no room to keep clear of the 
 .lvl { stroke: var(--lsc-text); }
 .knob { fill: var(--lsc-sel); filter: drop-shadow(0 1px 3px rgba(0,0,0,.5)); }
 .rim { fill: none; stroke: var(--lsc-edge); }
+.hub { fill: #dfeaf7; }   /* under the snow; the pumpkin theme colours its own */
+.cover .bare { display: none; }
 .vl { font-size: 13px; font-weight: 600; letter-spacing: 1px; fill: var(--lsc-dim); text-anchor: middle; }
 .now { text-align: center; min-width: 0; }
 .song { font-size: 20px; font-weight: 600; line-height: 1.25; }
@@ -139,7 +142,7 @@ ha-card.t-christmas { padding-bottom: 18px; }   /* no room to keep clear of the 
     _html(st) {
       const cfg = this._config, id = cfg.entity, a = st.attributes, feat = num(a.supported_features) ?? 0;
       const na = st.state === "unavailable", off = st.state === "off", playing = st.state === "playing", dis = na ? "disabled" : "";
-      const [, open] = themedCard(this, `${off || na ? "" : "on"} ${na ? "na" : ""}`, "--glow:0,0,0;--glow-a:0");   // the cover gives the glow, not a light's colour
+      const [theme, open] = themedCard(this, `${off || na ? "" : "on"} ${na ? "na" : ""}`, "--glow:0,0,0;--glow-a:0");   // the cover gives the glow, not a light's colour
       const v = this._vol(st), canVol = !na && !!(feat & MP.VOLUME), p = mediaPos(st);
       // Home Assistant's own copy first: a player's direct picture URL can be plain http, which an https dashboard blocks.
       const pic = [a.entity_picture_local, a.entity_picture].find((u) => typeof u === "string" && u);
@@ -156,7 +159,7 @@ ha-card.t-christmas { padding-bottom: 18px; }   /* no room to keep clear of the 
         <div class="vol" ${canVol ? `data-slider="vol" ${sliderAttrs("Volume", v, 0, 100, v + "%")}` : ""}>
           ${src ? `<img class="glow" src="${src}" alt=""><img class="art" data-act="more" role="button" tabindex="0" src="${src}" alt="More info">`
       : `<div class="art" data-act="more" role="button" tabindex="0" aria-label="More info"><ha-icon icon="mdi:music"></ha-icon></div>`}
-          ${volSvg(v, canVol, a.is_volume_muted)}
+          ${volSvg(v, canVol, a.is_volume_muted, HUB_ART[theme === "christmas" ? "winter" : theme], !!src)}
         </div>
         <div class="side">
           <div class="now"><div class="song">${esc(a.media_title || (playing ? "Playing" : "Nothing playing"))}</div>
