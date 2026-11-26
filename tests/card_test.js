@@ -13,8 +13,8 @@ const ctx = { console, requestAnimationFrame() { return 1; }, setTimeout() { ret
 } };
 vm.createContext(ctx);
 vm.runInContext(fs.readFileSync(path.join(__dirname, "..", "light-studio-card.js"), "utf8")
-  + "\nthis.LightStudioCard = LightStudioCard; this.LightDialCard = LightDialCard; this.THEMES = THEMES; this.holidayTheme = holidayTheme;", ctx);
-const { hueName, presetMatches, defaultPresets, caps, partLabels, dialFrac, LightStudioCard, LightDialCard, THEMES, holidayTheme } = ctx;
+  + "\nthis.LightStudioCard = LightStudioCard; this.LightDialCard = LightDialCard; this.THEMES = THEMES; this.holidayTheme = holidayTheme; this.themeFor = themeFor;", ctx);
+const { hueName, presetMatches, defaultPresets, caps, partLabels, dialFrac, LightStudioCard, LightDialCard, THEMES, holidayTheme, themeFor } = ctx;
 
 check(hueName(23) === "Orange" && hueName(355) === "Red" && hueName(230) === "Blue", "hueName");
 check(partLabels(["Office Center Lights", "Office Accent Lights"]).join() === "Center,Accent", "part labels drop shared words");
@@ -255,6 +255,18 @@ check(on(2026, 11, 1) === "thanksgiving" && on(2026, 11, 26) === "thanksgiving" 
   && on(2023, 11, 23) === "thanksgiving" && on(2023, 11, 24) === "christmas", "us-holiday: thanksgiving runs to the fourth Thursday of November, then christmas");
 check(on(2026, 12, 25) === "christmas" && on(2026, 12, 26) === "winter" && on(2028, 2, 29) === "winter" && on(2027, 3, 1) === null && on(2026, 10, 31) === null, "us-holiday: christmas to the 25th, winter to the end of February, nothing after");
 check(!rejects({ entity: "media_player.o", theme: "us-holiday" }) && new RegExp('class="t-(' + (holidayTheme() || "midnight|paper") + ') ').test(themed("us-holiday")), "us-holiday: the cards take it, and show today's theme");
+// newyear and birthday, and birthdays: by date
+check(on(2026, 12, 30) === "winter" && on(2026, 12, 31) === "newyear" && on(2027, 1, 1) === "newyear" && on(2027, 1, 2) === "winter", "us-holiday: newyear on 31 December and 1 January");
+const day = (cfg, m, d) => themeFor(cfg, new Date(2027, m - 1, d));
+check(day({ theme: "ember", birthdays: "06-05" }, 6, 5) === "birthday" && day({ theme: "ember", birthdays: ["11-02", "06-05"] }, 6, 6) === "ember" && day({ theme: "us-holiday", birthdays: ["01-01"] }, 1, 1) === "birthday"
+  && day({ theme: "us-holiday" }, 1, 1) === "newyear" && day({ theme: "us-holiday" }, 7, 4) === "auto" && day({}, 6, 5) === undefined, "birthdays: a listed date wears the birthday theme over any other");
+check(rejects({ entity: "media_player.o", birthdays: "June 5" }) && rejects({ entity: "media_player.o", birthdays: ["06-05", "13-01"] }) && !rejects({ entity: "media_player.o", birthdays: ["06-05"] }), "birthdays: only MM-DD dates are taken");
+dc.setConfig({ entity: "light.lamp", theme: "newyear" });
+h = dc._html(dc._model());
+dc.setConfig({ entity: "light.lamp", theme: "birthday" });
+check(h.includes('class="t-newyear') && h.includes("lsc-ball") && dc._html(dc._model()).includes("lsc-bl"), "newyear and birthday dress the hub as a ball and a balloon");
+dc.setConfig({ entity: "light.lamp" });
+check(!/lsc-ball|class="hub"/.test(themed("newyear", { entity_picture: "/c.jpg" })) && themed("newyear", {}, "idle").includes("lsc-ball") && themed("birthday", {}, "idle").includes("lsc-bl"), "music: the ball and balloon show only with no cover");
 
 console.log(failures ?`${failures} failed` : "all passed");
 process.exit(failures ? 1 : 0);

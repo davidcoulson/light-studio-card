@@ -53,7 +53,7 @@ A bulb exposed as several lights that are never on together (a white centre and 
 ```yaml
 type: custom:light-dial-card
 entities: [light.office_center_lights, light.office_accent_lights]
-theme: auto        # glass (default) | midnight | paper | ember | ocean | forest | contrast | thanksgiving | christmas | winter | auto | us-holiday
+theme: auto        # glass (default) | midnight | paper | ember | ocean | forest | contrast | thanksgiving | christmas | winter | newyear | birthday | auto | us-holiday
 compact: true      # header, brightness slider and preset chips only
 ```
 
@@ -63,11 +63,13 @@ The dial card has seven themes and three seasonal ones. `theme: auto` uses midni
 
 ![The dial card in each theme: glass, midnight, paper, ember, ocean, forest, contrast, thanksgiving, christmas and winter](docs/themes.png)
 
-Three seasonal themes add moving art behind the controls and dress the dial's centre: `thanksgiving` (falling leaves, a pumpkin), `christmas` (snow over a row of lit trees, Santa) and `winter` (snow, a snow-capped dial). Each card starts its animation at its own random point, so cards side by side don't move in step. The motion stops when the device asks for reduced motion.
+Five seasonal themes add moving art behind the controls and dress the dial's centre: `thanksgiving` (falling leaves, a pumpkin), `christmas` (snow over a row of lit trees, Santa), `winter` (snow, a snow-capped dial), `newyear` (gold confetti, the New Year's Eve ball) and `birthday` (party confetti, a balloon). Each card starts its animation at its own random point, so cards side by side don't move in step. The motion stops when the device asks for reduced motion.
 
 ![The thanksgiving, christmas and winter themes](docs/seasonal.png)
 
-`theme: us-holiday` picks the seasonal theme from the date on the device showing the card: `thanksgiving` from 1 November to Thanksgiving Day (the fourth Thursday), `christmas` from the day after to 25 December, and `winter` until the end of February. For the rest of the year it behaves like `auto`.
+`theme: us-holiday` picks the seasonal theme from the date on the device showing the card: `thanksgiving` from 1 November to Thanksgiving Day (the fourth Thursday), `christmas` from the day after to 25 December, `newyear` on 31 December and 1 January, and `winter` on the other days until the end of February. For the rest of the year it behaves like `auto`.
+
+`birthdays: [06-15, 11-02]` (dates as MM-DD, on the dial card and the music card) makes the card wear the `birthday` theme on those dates, whatever `theme:` says.
 
 Seasonal presets like the ones in the screenshot are set with `presets:`; the themes change only the look.
 
@@ -88,7 +90,7 @@ favorites:                             # optional buttons that start something p
   - { name: Focus, media_content_id: "library://playlist/31", media_content_type: playlist }
 ```
 
-Drag the ring around the album art to set the volume; tap the art for the player's more-info dialog. With the `christmas` or `winter` theme the album art wears a cap of snow, and in all three seasonal themes a player with no cover shows a pumpkin or a snowy disc. The dial sits above the track and buttons, and beside them when the card is 520px wide or more, so it fits a wall panel upright or on its side. Buttons the player does not support (shuffle, repeat, previous, next, power) are left out, and the progress bar shows only when the player reports the track's length. A favourite is highlighted while the player reports its `media_content_id`.
+Drag the ring around the album art to set the volume; tap the art for the player's more-info dialog. With the `christmas` or `winter` theme the album art wears a cap of snow, and in every seasonal theme a player with no cover shows that theme's dial centre: a pumpkin, a snowy disc, the New Year's Eve ball or a balloon. The dial sits above the track and buttons, and beside them when the card is 520px wide or more, so it fits a wall panel upright or on its side. Buttons the player does not support (shuffle, repeat, previous, next, power) are left out, and the progress bar shows only when the player reports the track's length. A favourite is highlighted while the player reports its `media_content_id`.
 
 ## Test
 

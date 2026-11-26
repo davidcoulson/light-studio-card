@@ -20,8 +20,9 @@
 // custom:light-dial-card takes the same config: a glass card with a brightness dial,
 // White / Color / Effects tabs and a time-of-day warmth suggestion. It also takes
 //   theme: glass | midnight | paper | ember | ocean | forest | contrast     # default glass
-//   theme: thanksgiving | christmas | winter    # seasonal: falling leaves or snow, and a dressed-up dial
+//   theme: thanksgiving | christmas | winter | newyear | birthday    # seasonal: falling leaves, snow or confetti, and a dressed-up dial
 //   theme: us-holiday                           # the seasonal theme for today's date; like auto the rest of the year
+//   birthdays: [06-15, 11-02]                   # optional: on these dates (MM-DD) the card wears the birthday theme, whatever theme: says
 //   theme: auto        # midnight in dark mode, paper in light mode
 //   compact: true      # header, brightness slider and preset chips only
 //
@@ -283,8 +284,14 @@ const bulbs = (odd) => ROW.map(([x, y, , s]) => BULBS.map(([u, v], i) => {
   return i % 2 === odd ? `<circle ${at} r="3.4" opacity=".28"/><circle ${at} r="1.3"/>` : "";
 }).join("")).join("");
 const TREES = [svgUrl(170, 64, stamp(TREE, ROW) + bulbs(1) + `<rect y="57" width="170" height="7" fill="#eaf3ff"/>`), svgUrl(170, 64, bulbs(0))];
+// Confetti: the same strip stamped in two layers, in gold for New Year and in party colours for a birthday.
+const BIT = "M7 10H17V14H7Z";
+const BITS = [[[42, 52, 20, 1], [172, 112, -40, 1.2], [92, 204, 75, .9], [204, 258, 150, 1], [26, 266, -110, .8], [130, 30, 60, .7], [214, 170, 10, .9], [60, 130, -25, .75]],
+  [[30, 40, -60, .6], [130, 90, 35, .55], [70, 170, 120, .6], [160, 190, 80, .5], [100, 20, 15, .5]]];
+const confetti = (colours) => [[240, 300], [180, 220]].map(([w, h], n) => svgUrl(w, h, stamp(BIT, BITS[n].map((at, i) => [...at, colours[(i + n) % colours.length]]))));
+const GOLD = confetti(["#ffd76a", "#f4f4f8", "#c9a43a", "#fff3c4"]), PARTY = confetti(["#ff5c7a", "#ffd24d", "#4da3ff", "#5fd08a", "#b889ff"]);
 const HUB_SNOW = "M58 73A50 50 0 0 1 142 73C136 80 128 70 120 76C113 81 108 72 100 76C92 80 88 71 80 77C72 82 64 72 58 73Z";
-// Drawn over the dial's hub: a pumpkin, Santa with the level in his beard, a cap of snow.
+// Drawn over the dial's hub: a pumpkin, Santa with the level in his beard, a cap of snow, the New Year's Eve ball, a balloon.
 const HUB_ART = {
   thanksgiving: `<defs><radialGradient id="lsc-pk" cx=".4" cy=".32" r=".8"><stop offset="0" stop-color="#ffb055"/><stop offset="1" stop-color="#e2700f"/></radialGradient></defs>
     <g fill="none" stroke="#8a3c00" stroke-opacity=".3" stroke-width="1.5"><ellipse cx="100" cy="100" rx="17" ry="49.2"/><ellipse cx="100" cy="100" rx="35" ry="49.6"/></g>
@@ -297,8 +304,14 @@ const HUB_ART = {
     <circle cx="79" cy="87" r="4.5" fill="#f09a8a" opacity=".55"/><circle cx="121" cy="87" r="4.5" fill="#f09a8a" opacity=".55"/>
     <g fill="#fff" stroke="#dcdce4" stroke-width=".8"><ellipse cx="91.5" cy="93" rx="10" ry="5"/><ellipse cx="108.5" cy="93" rx="10" ry="5"/></g><circle cx="100" cy="89" r="4" fill="#e8907c"/>`,
   winter: `<path d="${HUB_SNOW}" transform="translate(0 2)" fill="#3c6496" opacity=".25"/><path d="${HUB_SNOW}" fill="#fff"/>`,
+  newyear: `<defs><radialGradient id="lsc-ball" cx=".38" cy=".3" r=".85"><stop offset="0" stop-color="#fffbe6"/><stop offset=".55" stop-color="#ffd76a"/><stop offset="1" stop-color="#b8861a"/></radialGradient></defs>
+    <g fill="none" stroke="#7a5200" stroke-opacity=".35" stroke-width="1.2"><ellipse cx="100" cy="100" rx="17" ry="49.2"/><ellipse cx="100" cy="100" rx="35" ry="49.6"/><path d="M56.7 75H143.3M50.6 100H149.4M56.7 125H143.3"/></g>
+    <path d="M72 62L74 68L80 70L74 72L72 78L70 72L64 70L70 68ZM124 118L125.5 122.5L130 124L125.5 125.5L124 130L122.5 125.5L118 124L122.5 122.5Z" fill="#fff" opacity=".9"/>`,
+  birthday: `<defs><radialGradient id="lsc-bl" cx=".36" cy=".3" r=".85"><stop offset="0" stop-color="#ffb3d1"/><stop offset="1" stop-color="#e8457f"/></radialGradient></defs>
+    <path d="M100 148L94.5 155H105.5Z" fill="#d63a72"/><ellipse cx="80" cy="76" rx="9" ry="15" transform="rotate(35 80 76)" fill="#fff" opacity=".4"/>`,
 };
-const SEASON = ":is(.t-thanksgiving, .t-christmas, .t-winter)";
+const SEASON = ":is(.t-thanksgiving, .t-christmas, .t-winter, .t-newyear, .t-birthday)";
+const PARTY_TIME = ":is(.t-newyear, .t-birthday)";
 const NIGHT = "--lsc-edge: rgba(190,215,255,.28); --lsc-well: rgba(0,6,20,.35);";
 const SEASON_CSS = `
 ${SEASON} > * { position: relative; z-index: 1; }
@@ -324,6 +337,18 @@ ha-card.t-winter { ${NIGHT} --lsc-sel: #eaf3ff; --lsc-sel-text: #0f1b30;
     radial-gradient(ellipse 120px 21px at 88% 100%, #eaf3ff 97%, transparent), linear-gradient(180deg, #1c2e50, #0d1626); }
 .t-winter::after { background: ${SNOW[1]} 0 0 / 140px 140px; --tile: 140px; opacity: .7; animation: lsc-fall 8s linear infinite; }
 .t-winter .hub { fill: #dfeaf7; }
+ha-card.t-newyear { ${NIGHT} --lsc-card: radial-gradient(ellipse 70% 45% at 50% 0, rgba(255,215,106,.16), transparent), linear-gradient(180deg, #1a1638, #090914); --lsc-edge: rgba(255,215,106,.32); --lsc-sel: #ffd76a; --lsc-sel-text: #1a1638; }
+ha-card.t-birthday { --lsc-card: linear-gradient(165deg, #4a2370, #1b1033 78%); --lsc-edge: rgba(255,160,210,.32); --lsc-sel: #ff8fb8; --lsc-sel-text: #2a0a1c; --lsc-well: rgba(12,4,24,.4); --lsc-chip: rgba(255,170,220,.12); }
+${PARTY_TIME}::before { inset: 0 -12px; --tile: 300px; opacity: .75; animation: lsc-fall 17s linear infinite, lsc-sway 5s ease-in-out infinite alternate; }
+${PARTY_TIME}::after { inset: 0 -12px; --tile: 220px; opacity: .5; animation: lsc-fall 11s linear infinite, lsc-sway 4s ease-in-out infinite alternate-reverse; }
+.t-newyear::before { background: ${GOLD[0]} 0 0 / 240px 300px; }
+.t-newyear::after { background: ${GOLD[1]} 0 0 / 180px 220px; }
+.t-birthday::before { background: ${PARTY[0]} 0 0 / 240px 300px; }
+.t-birthday::after { background: ${PARTY[1]} 0 0 / 180px 220px; }
+.t-newyear .hub { fill: url(#lsc-ball); }
+.t-birthday .hub { fill: url(#lsc-bl); }
+.t-newyear .val { fill: #4a3200; }
+.t-birthday .val { fill: #4a0f2a; }
 `;
 
 // The dial variant: the same layout pieces, restyled as a frosted glass card.
@@ -708,19 +733,27 @@ LightStudioCard.css = CSS;
 
 function checkTheme(config) {
   if (config?.theme && !["auto", "us-holiday", ...THEMES].includes(config.theme)) throw new Error(`theme: must be auto, us-holiday or one of ${THEMES.join(", ")}`);
+  if ([].concat(config?.birthdays ?? []).some((b) => !/^(0[1-9]|1[0-2])-(0[1-9]|[12]\d|3[01])$/.test(b))) throw new Error("birthdays: must be dates as MM-DD, like 06-15");
 }
 // theme: us-holiday, by the device's date: thanksgiving from 1 November to Thanksgiving Day, christmas from the day after to 25 December,
-// winter until the end of February, and nothing (the card then follows auto) for the rest of the year.
+// newyear on 31 December and 1 January, winter on the other days until the end of February, and nothing (the card then follows auto) for the rest of the year.
 function holidayTheme(d = new Date()) {
   const m = d.getMonth() + 1, day = d.getDate();
   const thanksgiving = 22 + (11 - new Date(d.getFullYear(), 10, 1).getDay()) % 7;   // the fourth Thursday of November
   if (m === 11) return day <= thanksgiving ? "thanksgiving" : "christmas";
-  if (m === 12) return day <= 25 ? "christmas" : "winter";
+  if (m === 12) return day <= 25 ? "christmas" : day === 31 ? "newyear" : "winter";
+  if (m === 1 && day === 1) return "newyear";
   return m <= 2 ? "winter" : null;
+}
+// The theme a card asks for today: birthday on a date in birthdays:, else its theme:, with us-holiday worked out from the date.
+function themeFor(cfg, d = new Date()) {
+  const mmdd = `${d.getMonth() + 1}-${d.getDate()}`.replace(/\b\d\b/g, "0$&");
+  if ([].concat(cfg.birthdays ?? []).includes(mmdd)) return "birthday";
+  return cfg.theme === "us-holiday" ? holidayTheme(d) || "auto" : cfg.theme;
 }
 // [theme, opening <ha-card> tag] for a themed card.
 function themedCard(card, cls, style) {
-  const cfg = card._config, pick = cfg.theme === "us-holiday" ? holidayTheme() || "auto" : cfg.theme;
+  const pick = themeFor(card._config);
   const theme = pick === "auto" ? (card._hass.themes?.darkMode ? "midnight" : "paper") : pick || "glass";
   card._seed ??= Math.random();   // each card starts its seasonal art at its own point, so cards side by side don't move in step
   const now = (Date.now() - (card._t0 ??= Date.now())) / 1000 + card._seed * 600;   // seconds this card has been up: keeps the animation going across renders
