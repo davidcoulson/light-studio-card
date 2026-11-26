@@ -284,10 +284,9 @@ const bulbs = (odd) => ROW.map(([x, y, , s]) => BULBS.map(([u, v], i) => {
 const TREES = [svgUrl(170, 64, stamp(TREE, ROW) + bulbs(1) + `<rect y="57" width="170" height="7" fill="#eaf3ff"/>`), svgUrl(170, 64, bulbs(0))];
 const HUB_SNOW = "M58 73A50 50 0 0 1 142 73C136 80 128 70 120 76C113 81 108 72 100 76C92 80 88 71 80 77C72 82 64 72 58 73Z";
 // Drawn over the dial's hub: a pumpkin, Santa with the level in his beard, a cap of snow.
-// class="bare" marks what only suits a plain hub: the music card leaves that off an album cover.
 const HUB_ART = {
   thanksgiving: `<defs><radialGradient id="lsc-pk" cx=".4" cy=".32" r=".8"><stop offset="0" stop-color="#ffb055"/><stop offset="1" stop-color="#e2700f"/></radialGradient></defs>
-    <g class="bare" fill="none" stroke="#8a3c00" stroke-opacity=".3" stroke-width="1.5"><ellipse cx="100" cy="100" rx="17" ry="49.2"/><ellipse cx="100" cy="100" rx="35" ry="49.6"/></g>
+    <g fill="none" stroke="#8a3c00" stroke-opacity=".3" stroke-width="1.5"><ellipse cx="100" cy="100" rx="17" ry="49.2"/><ellipse cx="100" cy="100" rx="35" ry="49.6"/></g>
     <path d="M96.5 52.5C96 45 99 41.5 104.5 40.5L106.5 44.5C103.5 45.5 102.5 48 102.8 52.5Z" fill="#5d7a2e"/>`,
   christmas: `<defs><clipPath id="lsc-hub"><circle cx="100" cy="100" r="50"/></clipPath></defs>
     <ellipse cx="100" cy="81" rx="31" ry="15" fill="#f6c9a4"/><rect x="50" y="50" width="100" height="19" fill="#c8202b" clip-path="url(#lsc-hub)"/>
