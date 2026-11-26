@@ -243,6 +243,12 @@ mu = music(player({ supported_features: 4 }));
 check(mu.html().includes("mdi:stop") && mu.tap("play")[0] === "media_player.media_stop", "music: a player that cannot pause stops");
 h = music(player({}, "unavailable")).html();
 check(h.includes("disabled") && !h.includes("data-slider") && h.includes("Unavailable"), "music: an unavailable player takes no input");
+const themed = (theme, attrs, state) => music(player(attrs, state), { theme }).html();
+h = themed("winter", { entity_picture: "/c.jpg" });
+check(h.includes('<g class="cover"') && !h.includes('class="hub"'), "music: a cover wears the seasonal art");
+check(!themed("christmas", {}, "idle").includes("lsc-hub") && themed("christmas", { entity_picture: "/c.jpg" }).includes("M58 73A50"), "music: christmas gets the snow cap, not Santa");
+check(music(player({}, "idle"), { theme: "thanksgiving" }).html().includes('<g class="" transform="translate(120 120) scale(1.64) translate(-100 -100)"><circle class="hub"'), "music: with no cover the hub art is drawn whole, on a hub of its own");
+check(!/class="hub"|class="cover"/.test(music(player()).html()), "music: other themes leave the dial as it was");
 
 console.log(failures ?`${failures} failed` : "all passed");
 process.exit(failures ? 1 : 0);
