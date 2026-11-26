@@ -53,7 +53,7 @@ A bulb exposed as several lights that are never on together (a white centre and 
 ```yaml
 type: custom:light-dial-card
 entities: [light.office_center_lights, light.office_accent_lights]
-theme: auto        # glass (default) | midnight | paper | ember | ocean | forest | contrast | thanksgiving | christmas | winter | auto
+theme: auto        # glass (default) | midnight | paper | ember | ocean | forest | contrast | thanksgiving | christmas | winter | auto | us-holiday
 compact: true      # header, brightness slider and preset chips only
 ```
 
@@ -66,6 +66,8 @@ The dial card has seven themes and three seasonal ones. `theme: auto` uses midni
 Three seasonal themes add moving art behind the controls and dress the dial's centre: `thanksgiving` (falling leaves, a pumpkin), `christmas` (snow over a row of lit trees, Santa) and `winter` (snow, a snow-capped dial). Each card starts its animation at its own random point, so cards side by side don't move in step. The motion stops when the device asks for reduced motion.
 
 ![The thanksgiving, christmas and winter themes](docs/seasonal.png)
+
+`theme: us-holiday` picks the seasonal theme from the date on the device showing the card: `thanksgiving` from 1 November to Thanksgiving Day (the fourth Thursday), `christmas` from the day after to 25 December, and `winter` until the end of February. For the rest of the year it behaves like `auto`.
 
 Seasonal presets like the ones in the screenshot are set with `presets:`; the themes change only the look.
 

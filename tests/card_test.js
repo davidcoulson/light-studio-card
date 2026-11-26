@@ -13,8 +13,8 @@ const ctx = { console, requestAnimationFrame() { return 1; }, setTimeout() { ret
 } };
 vm.createContext(ctx);
 vm.runInContext(fs.readFileSync(path.join(__dirname, "..", "light-studio-card.js"), "utf8")
-  + "\nthis.LightStudioCard = LightStudioCard; this.LightDialCard = LightDialCard; this.THEMES = THEMES;", ctx);
-const { hueName, presetMatches, defaultPresets, caps, partLabels, dialFrac, LightStudioCard, LightDialCard, THEMES } = ctx;
+  + "\nthis.LightStudioCard = LightStudioCard; this.LightDialCard = LightDialCard; this.THEMES = THEMES; this.holidayTheme = holidayTheme;", ctx);
+const { hueName, presetMatches, defaultPresets, caps, partLabels, dialFrac, LightStudioCard, LightDialCard, THEMES, holidayTheme } = ctx;
 
 check(hueName(23) === "Orange" && hueName(355) === "Red" && hueName(230) === "Blue", "hueName");
 check(partLabels(["Office Center Lights", "Office Accent Lights"]).join() === "Center,Accent", "part labels drop shared words");
@@ -249,6 +249,12 @@ check(h.includes("M58 73A50") && !h.includes('class="hub"') && !themed("thanksgi
 check(!themed("christmas", {}, "idle").includes("lsc-hub") && themed("christmas", { entity_picture: "/c.jpg" }).includes("M58 73A50"), "music: christmas gets the snow cap, not Santa");
 check(music(player({}, "idle"), { theme: "thanksgiving" }).html().includes('<g transform="translate(120 120) scale(1.64) translate(-100 -100)"><circle class="hub"'), "music: with no cover the hub art is drawn whole, on a hub of its own");
 check(!/class="hub"|scale\(1\.64\)/.test(music(player()).html()), "music: other themes leave the dial as it was");
+// us-holiday: the theme follows the date
+const on = (y, m, d) => holidayTheme(new Date(y, m - 1, d));
+check(on(2026, 11, 1) === "thanksgiving" && on(2026, 11, 26) === "thanksgiving" && on(2026, 11, 27) === "christmas" && on(2025, 11, 27) === "thanksgiving" && on(2025, 11, 28) === "christmas"
+  && on(2023, 11, 23) === "thanksgiving" && on(2023, 11, 24) === "christmas", "us-holiday: thanksgiving runs to the fourth Thursday of November, then christmas");
+check(on(2026, 12, 25) === "christmas" && on(2026, 12, 26) === "winter" && on(2028, 2, 29) === "winter" && on(2027, 3, 1) === null && on(2026, 10, 31) === null, "us-holiday: christmas to the 25th, winter to the end of February, nothing after");
+check(!rejects({ entity: "media_player.o", theme: "us-holiday" }) && new RegExp('class="t-(' + (holidayTheme() || "midnight|paper") + ') ').test(themed("us-holiday")), "us-holiday: the cards take it, and show today's theme");
 
 console.log(failures ?`${failures} failed` : "all passed");
 process.exit(failures ? 1 : 0);

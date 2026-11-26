@@ -21,6 +21,7 @@
 // White / Color / Effects tabs and a time-of-day warmth suggestion. It also takes
 //   theme: glass | midnight | paper | ember | ocean | forest | contrast     # default glass
 //   theme: thanksgiving | christmas | winter    # seasonal: falling leaves or snow, and a dressed-up dial
+//   theme: us-holiday                           # the seasonal theme for today's date; like auto the rest of the year
 //   theme: auto        # midnight in dark mode, paper in light mode
 //   compact: true      # header, brightness slider and preset chips only
 //
@@ -706,11 +707,21 @@ class LightStudioCard extends HTMLElement {
 LightStudioCard.css = CSS;
 
 function checkTheme(config) {
-  if (config?.theme && config.theme !== "auto" && !THEMES.includes(config.theme)) throw new Error(`theme: must be auto or one of ${THEMES.join(", ")}`);
+  if (config?.theme && !["auto", "us-holiday", ...THEMES].includes(config.theme)) throw new Error(`theme: must be auto, us-holiday or one of ${THEMES.join(", ")}`);
+}
+// theme: us-holiday, by the device's date: thanksgiving from 1 November to Thanksgiving Day, christmas from the day after to 25 December,
+// winter until the end of February, and nothing (the card then follows auto) for the rest of the year.
+function holidayTheme(d = new Date()) {
+  const m = d.getMonth() + 1, day = d.getDate();
+  const thanksgiving = 22 + (11 - new Date(d.getFullYear(), 10, 1).getDay()) % 7;   // the fourth Thursday of November
+  if (m === 11) return day <= thanksgiving ? "thanksgiving" : "christmas";
+  if (m === 12) return day <= 25 ? "christmas" : "winter";
+  return m <= 2 ? "winter" : null;
 }
 // [theme, opening <ha-card> tag] for a themed card.
 function themedCard(card, cls, style) {
-  const cfg = card._config, theme = cfg.theme === "auto" ? (card._hass.themes?.darkMode ? "midnight" : "paper") : cfg.theme || "glass";
+  const cfg = card._config, pick = cfg.theme === "us-holiday" ? holidayTheme() || "auto" : cfg.theme;
+  const theme = pick === "auto" ? (card._hass.themes?.darkMode ? "midnight" : "paper") : pick || "glass";
   card._seed ??= Math.random();   // each card starts its seasonal art at its own point, so cards side by side don't move in step
   const now = (Date.now() - (card._t0 ??= Date.now())) / 1000 + card._seed * 600;   // seconds this card has been up: keeps the animation going across renders
   return [theme, `<ha-card class="t-${theme} ${cls}" style="--now:${now};--dx:${Math.round(card._seed * 240)}px;${style}">`];
