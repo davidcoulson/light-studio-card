@@ -86,7 +86,7 @@ favorites:                             # optional buttons that start something p
   - { name: Focus, media_content_id: "library://playlist/31", media_content_type: playlist }
 ```
 
-Drag the ring around the album art to set the volume; tap the art for the player's more-info dialog. With a seasonal theme the album art wears the pumpkin's stem or a cap of snow (`christmas` and `winter`), and a player with no cover shows the whole pumpkin or a snowy disc. The dial sits above the track and buttons, and beside them when the card is 520px wide or more, so it fits a wall panel upright or on its side. Buttons the player does not support (shuffle, repeat, previous, next, power) are left out, and the progress bar shows only when the player reports the track's length. A favourite is highlighted while the player reports its `media_content_id`.
+Drag the ring around the album art to set the volume; tap the art for the player's more-info dialog. With the `christmas` or `winter` theme the album art wears a cap of snow, and in all three seasonal themes a player with no cover shows a pumpkin or a snowy disc. The dial sits above the track and buttons, and beside them when the card is 520px wide or more, so it fits a wall panel upright or on its side. Buttons the player does not support (shuffle, repeat, previous, next, power) are left out, and the progress bar shows only when the player reports the track's length. A favourite is highlighted while the player reports its `media_content_id`.
 
 ## Test
 

@@ -29,14 +29,14 @@ customElements.whenDefined("light-dial-card").then(() => {
     const run = st.state === "playing" ? (now - new Date(a.media_position_updated_at)) / 1000 : 0;
     return [clamp(pos + (run > 0 ? run : 0), 0, dur), dur];
   }
-  // art: a seasonal theme's hub art, drawn for a 100-wide hub at 100, 100 and scaled up to the album art. A cover wears the stem or the snow; with no cover it is the whole pumpkin or a snowy disc. Christmas gets the snow too, not Santa.
+  // art: a seasonal theme's hub art, drawn for a 100-wide hub at 100, 100 and scaled up to the album art. A cover wears only the snow; with no cover it is the whole pumpkin or a snowy disc. Christmas gets the snow too, not Santa.
   function volSvg(v, live, muted, art, cover) {
     const p = (f) => dialPoint(f, null, VOL).map((n) => n.toFixed(1)).join(" ");
     const arc = `d="M${p(0)} A${VOL.r} ${VOL.r} 0 1 1 ${p(1)}" fill="none" stroke-width="12" stroke-linecap="round"`;
     const [x, y] = p(v / 100).split(" ");
     return `<svg viewBox="0 0 240 240" aria-hidden="true">
       <path class="trk" ${arc}/><circle class="rim" cx="120" cy="120" r="82"/>
-      ${art ? `<g class="${cover ? "cover" : ""}" transform="translate(120 120) scale(1.64) translate(-100 -100)">${cover ? "" : '<circle class="hub" cx="100" cy="100" r="50"/>'}${art}</g>` : ""}
+      ${art ? `<g transform="translate(120 120) scale(1.64) translate(-100 -100)">${cover ? "" : '<circle class="hub" cx="100" cy="100" r="50"/>'}${art}</g>` : ""}
       ${live ? `<path class="lvl" ${arc} pathLength="100" stroke-dasharray="${v} 100"/><circle class="knob" cx="${x}" cy="${y}" r="10"/>
       <text class="vl" x="120" y="229">${muted ? "MUTED" : "VOL " + v}</text>` : ""}
     </svg>`;
@@ -66,7 +66,6 @@ ha-card.t-christmas { padding-bottom: 18px; }   /* no room to keep clear of the 
 .knob { fill: var(--lsc-sel); filter: drop-shadow(0 1px 3px rgba(0,0,0,.5)); }
 .rim { fill: none; stroke: var(--lsc-edge); }
 .hub { fill: #dfeaf7; }   /* under the snow; the pumpkin theme colours its own */
-.cover .bare { display: none; }
 .vl { font-size: 13px; font-weight: 600; letter-spacing: 1px; fill: var(--lsc-dim); text-anchor: middle; }
 .now { text-align: center; min-width: 0; }
 .song { font-size: 20px; font-weight: 600; line-height: 1.25; }
@@ -159,7 +158,7 @@ ha-card.t-christmas { padding-bottom: 18px; }   /* no room to keep clear of the 
         <div class="vol" ${canVol ? `data-slider="vol" ${sliderAttrs("Volume", v, 0, 100, v + "%")}` : ""}>
           ${src ? `<img class="glow" src="${src}" alt=""><img class="art" data-act="more" role="button" tabindex="0" src="${src}" alt="More info">`
       : `<div class="art" data-act="more" role="button" tabindex="0" aria-label="More info"><ha-icon icon="mdi:music"></ha-icon></div>`}
-          ${volSvg(v, canVol, a.is_volume_muted, HUB_ART[theme === "christmas" ? "winter" : theme], !!src)}
+          ${volSvg(v, canVol, a.is_volume_muted, src && theme === "thanksgiving" ? "" : HUB_ART[theme === "christmas" ? "winter" : theme], !!src)}
         </div>
         <div class="side">
           <div class="now"><div class="song">${esc(a.media_title || (playing ? "Playing" : "Nothing playing"))}</div>
